@@ -15,7 +15,7 @@ class RegisterFields implements FieldRegistratatorInterface
         foreach($Fields as $Field){
             $this->Fields[$Field->getFieldName()] = $Field;
         }
-
+        
         return $this->Fields;
     }
 }

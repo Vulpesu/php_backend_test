@@ -7,7 +7,7 @@ interface ProcessRepositoryInterface
 {
 
     public function save(ProcessInterface $Process) : ProcessInterface;
-    public function findById(int $Id) : ProcessInterface;
-    public function findByName(string $Name) : ProcessInterface;
+    public function findById(int $Id) : ?ProcessInterface;
+    public function findByName(string $Name) : ?ProcessInterface;
 
 }

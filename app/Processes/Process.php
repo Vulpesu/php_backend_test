@@ -38,4 +38,27 @@ class Process implements ProcessInterface
         $this->Fields = $FieldRegistrar->registrationFields($raw_Fields, $Field_creator);
     }
 
+    public function getFieldsAsArray(): array
+    {
+        // Если в классе Process массив полей хранится, например, в свойстве $fields
+        // (которое заполнил RegisterFields), перебираем его.
+        $rawPayload = [];
+
+        foreach ($this->Fields as $fieldName => $fieldObject) {
+            // У каждого объекта Field должен быть метод, возвращающий его сырые данные (массив).
+            // Если структура сложнее, вытащите геттерами: например, ['name' => $fieldObject->getName(), 'type' => ...]
+            if (method_exists($fieldObject, 'toArray')) {
+                $rawPayload[] = $fieldObject->toArray();
+            } else {
+                // Альтернативный вариант, если метода toArray нет:
+                $rawPayload[] = [
+                    'name' => $fieldObject->getFieldName(),
+                    // 'type' => $fieldObject->getType(), // и т.д.
+                ];
+            }
+        }
+
+        return $rawPayload;
+    }
+
 }

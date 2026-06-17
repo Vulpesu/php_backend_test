@@ -15,4 +15,6 @@ interface ProcessInterface
 
     public function addFields(array $raw_Fields, FieldRegistratatorInterface $FieldRegistrar, FieldFactoryInterface $FieldCreator): void;
 
+    public function getFieldsAsArray(): array;
+
 }
