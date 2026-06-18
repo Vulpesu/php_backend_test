@@ -4,7 +4,4 @@
 /storage/cache/*
 .idea/
 .vscode/
-composer.phar
-phpunit.phar
-phpunixt.xml
 .phpunit.result.cache
