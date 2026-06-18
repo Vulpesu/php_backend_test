@@ -10,4 +10,6 @@ interface FieldInterface
 
     public function getFieldValue(): string;
     public function setFieldValue(string $FieldValue): void;
+
+    public function asArray(): array;
 }

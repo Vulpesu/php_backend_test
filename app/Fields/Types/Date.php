@@ -2,47 +2,62 @@
 namespace App\Fields\Types;
 
 use App\Fields\Contracts\FieldInterface;
+use DateTime;
 
 class Date implements FieldInterface
 {
+    private string $fieldName;
+    private string $fieldValue;
+    private string $format;
 
-    private string $FieldName;
-    private string $FieldValue;    
+    public function __construct(
+        string $name,
+        ?string $value = null,
+        string $format = 'Y-m-d H:i:s'
+    ) {
+        $this->format = $format;
 
-    public function __construct(string $name, string $value) {
         $this->setFieldName($name);
         $this->setFieldValue($value);
     }
 
-    
     public function get_DefaultValue(): string
     {
-        $date = new \DateTime();
-        return $date->format('Y-m-d H:i:s');
+        return (new DateTime())->format($this->format);
     }
-
 
     public function getFieldName(): string
     {
-        return $this->FieldName;
+        return $this->fieldName;
     }
 
-    
     public function setFieldName(string $FieldName): void
     {
-        $this->FieldName = $FieldName;
+        $this->fieldName = $FieldName;
     }
 
-    
     public function getFieldValue(): string
     {
-        return $this->FieldValue;
+        return $this->fieldValue;
     }
 
-    
-    public function setFieldValue(string $FieldValue): void
+    public function setFieldValue(?string $fieldValue): void
     {
-        $this->FieldValue = $FieldValue ?? $this->get_DefaultValue();
+        $this->fieldValue = $fieldValue ?? $this->get_DefaultValue();
     }
 
+    public function getFormat(): string
+    {
+        return $this->format;
+    }
+
+    public function asArray(): array
+    {
+        return [
+            'name' => $this->getFieldName(),
+            'value' => $this->getFieldValue(),
+            'type' => basename(get_class($this)),
+            'format' => $this->format
+        ];
+    }
 }

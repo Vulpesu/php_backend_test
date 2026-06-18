@@ -2,7 +2,7 @@
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-use App\Processes\Process;
+use App\Processes\Entity\Process;
 use App\Fields\Registries\RegisterFields;
 use App\Fields\Registries\FieldFactory;
 use App\Database\DatabaseConfig;

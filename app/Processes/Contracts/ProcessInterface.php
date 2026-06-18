@@ -6,15 +6,12 @@ use App\Fields\Contracts\FieldFactoryInterface;
 
 interface ProcessInterface
 {
-
     public function getName(): string;
 
-    public function setName(string $Name): void;
+    public function setName(string $name): void;
 
     public function getFields(): array;
 
-    public function addFields(array $raw_Fields, FieldRegistratatorInterface $FieldRegistrar, FieldFactoryInterface $FieldCreator): void;
-
-    public function getFieldsAsArray(): array;
+    public function setFields(array $fields): void;
 
 }

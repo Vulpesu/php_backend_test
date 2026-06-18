@@ -43,4 +43,13 @@ class Text implements FieldInterface
     {
         $this->FieldValue = $FieldValue ?? $this->get_DefaultValue();
     }
+
+    public function asArray(): array
+    {
+        return [
+                'name' => $this->getFieldName(),
+                'value' => $this->getFieldValue(),
+                'type' => basename(get_class($this))
+            ];
+    }
 }

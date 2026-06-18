@@ -6,11 +6,15 @@ use App\Fields\Contracts\FieldRegistratatorInterface;
 use App\Fields\Types\Text;
 use App\Fields\Types\Date;
 use App\Fields\Types\Number;
+use App\Fields\Exceptions\FieldValidationException;
 
 class FieldFactory implements FieldFactoryInterface {
     
     // Маппинг надо определить динамически за классом, так как может меняться
     private array $map = [
+        'Text'   => Text::class,
+        'Number' => Number::class,
+        'Date'   => Date::class,
         'text'   => Text::class,
         'number' => Number::class,
         'date'   => Date::class,
@@ -24,9 +28,16 @@ class FieldFactory implements FieldFactoryInterface {
             $type = $FieldData['type'] ?? null;
             $value = $FieldData['value'] ?? null;
 
-            // Временная заглушка в случае если пустые данные(необходимо их отлавливать и выкидывать исключения)
-            if (!$name || !$type || !isset($this->map[$type])) {
-                continue; 
+            if (empty($name)) {
+                throw new FieldValidationException('Field name is required');
+            }
+
+            if (empty($type)) {
+                throw new FieldValidationException('Field type is required');
+            }
+
+            if (!isset($this->map[$type])) {
+                throw new FieldValidationException("Unknown field type: {$type}");
             }
 
             // Определяем имя класса из карты маппинга
@@ -40,17 +51,3 @@ class FieldFactory implements FieldFactoryInterface {
     }
 }
 
-class RegisterFields implements FieldRegistratatorInterface
-{
-    private array $Fields = [];
-
-    public function registrationFields(array $raw_Fields, FieldFactoryInterface $Field_creator): array {
-        $Fields = $Field_creator->createFieldsFromData($raw_Fields);
-
-        foreach($Fields as $Field){
-            $this->Fields[$Field->getFieldName()] = $Field;
-        }
-
-        return $this->Fields;
-    }
-}

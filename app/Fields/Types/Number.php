@@ -6,8 +6,8 @@ use App\Fields\Contracts\FieldInterface;
 class Number implements FieldInterface
 {
 
-    private string $FieldName;
-    private string $FieldValue;
+    private string $fieldName;
+    private string $fieldValue;
 
     public function __construct(string $name, string $value) {
         $this->setFieldName($name);
@@ -21,25 +21,33 @@ class Number implements FieldInterface
 
     public function getFieldName(): string
     {
-        return $this->FieldName;
+        return $this->fieldName;
     }
 
     
     public function setFieldName(string $FieldName): void
     {
-        $this->FieldName = $FieldName;
+        $this->fieldName = $FieldName;
     }
 
     
     public function getFieldValue(): string
     {
-        return $this->FieldValue;
+        return $this->fieldValue;
     }
 
     
-    public function setFieldValue(string $FieldValue): void
+    public function setFieldValue(string $fieldValue): void
     {
-        $this->FieldValue = $FieldValue ?? $this->get_DefaultValue();
+        $this->fieldValue = $fieldValue ?? $this->get_DefaultValue();
     }
 
+    public function asArray(): array
+    {
+        return [
+                'name' => $this->getFieldName(),
+                'value' => $this->getFieldValue(),
+                'type' => basename(get_class($this))
+            ];
+    }
 }

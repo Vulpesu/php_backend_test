@@ -5,21 +5,24 @@ use App\Processes\Contracts\ProcessRepositoryInterface;
 use App\Processes\Contracts\ProcessInterface;
 use App\Fields\Registries\FieldFactory;
 use App\Fields\Registries\RegisterFields;
-use App\Processes\Process;
+use App\Processes\Entity\Process;
+use App\Processes\Service\ProcessService;
 use PDO;
+use PDOException;
+use RuntimeException;
 
 class ProcessRepository implements ProcessRepositoryInterface
 {
 
     public  function __construct(private PDO $pdo) {}
 
-    public function save(ProcessInterface $Process): ProcessInterface{
+    public function save(ProcessInterface $Process): void{
     
         if ($this->findByName($Process->getName()) === null) {
-            return $this->insert($Process);
+            $this->insert($Process);
         }
 
-        return $this->update($Process);
+        $this->update($Process);
     }
     
     public function findById(int $id): ?ProcessInterface
@@ -47,7 +50,7 @@ class ProcessRepository implements ProcessRepositoryInterface
             }
         }
 
-        return $this->fromData($fieldsData, $process['name']);
+        return ProcessService::fromData($process['name'], $fieldsData);
     }
 
     public function findByName(string $name): ?ProcessInterface
@@ -77,7 +80,7 @@ class ProcessRepository implements ProcessRepositoryInterface
         }
 
 
-        return $this->fromData($fieldsData, $name);
+        return ProcessService::fromData($process['name'], $fieldsData);
     }
 
     public function getFields(ProcessInterface $Process)
@@ -86,7 +89,7 @@ class ProcessRepository implements ProcessRepositoryInterface
                                         WHERE process_id = (select process_id from process where name = :name)');
         $stmt->execute([':name' => $Process->getName()]);
 
-        $fields = $stmt->fetch();
+        $fields = $stmt->fetch(PDO::FETCH_ASSOC);
 
         $fieldsData = [];
 
@@ -101,20 +104,30 @@ class ProcessRepository implements ProcessRepositoryInterface
         return $fieldsData;
     }
 
-    private function insert(ProcessInterface $Process): ProcessInterface
+    private function insert(ProcessInterface $Process): void
     {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO process (Name)
-             VALUES (:name)'
-        );
+        
 
-        $stmt->execute([
-            ':name'  => $Process->getName(),
-        ]);
+        try {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO process (Name) VALUES (:name)'
+            );
+
+            $stmt->execute([
+                ':name' => $Process->getName(),
+            ]);
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000') {
+                throw new RuntimeException('Процесс с таким именем уже существует');
+            }
+
+            throw $e;
+        }
+
 
         $processId = (int) $this->pdo->lastInsertId();
 
-        $fieldsArray = $Process->getFieldsAsArray();
+        $fieldsArray = ProcessService::getFieldsAsArray($Process);
         $jsonString = json_encode($fieldsArray, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
         $stmt = $this->pdo->prepare('
@@ -127,43 +140,40 @@ class ProcessRepository implements ProcessRepositoryInterface
             ':json' => $jsonString
         ]);
 
-        return $this->findById($processId);
+        //return $this->findById($processId);
     }
 
-    private function update(ProcessInterface $Process): ProcessInterface
+    private function update(ProcessInterface $Process): void
     {
         $stmt = $this->pdo->prepare('SELECT process_id FROM process WHERE name = :name');
         $stmt->execute([':name' => $Process->getName()]);
         $process = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$process) {
-            throw new \Exception("Не удалось обновить: процесс '{$Process->getName()}' не найден в базе данных.");
+            throw new RuntimeException('Process not found for update');
         }
 
-        $fieldsArray = $Process->getFieldsAsArray();
+        $fieldsArray = ProcessService::getFieldsAsArray($Process);
         $jsonString = json_encode($fieldsArray, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
+        // $stmt = $this->pdo->prepare('
+        //     INSERT INTO fields (process_id, json) 
+        //     VALUES (:process_id, :json)
+        //     ON DUPLICATE KEY UPDATE json = :json_update
+        // ');
+        
         $stmt = $this->pdo->prepare('
-            INSERT INTO fields (process_id, json) 
+            INSERT INTO fields (process_id, json)
             VALUES (:process_id, :json)
-            ON DUPLICATE KEY UPDATE json = :json_update
+            ON CONFLICT(process_id) DO UPDATE SET json = excluded.json
         ');
+
         $stmt->execute([
             ':process_id'  => $process['process_id'],
-            ':json'        => $jsonString,
-            ':json_update' => $jsonString
+            ':json'        => $jsonString
         ]);
 
-        return $this->findById($process['process_id']);
-    }
-
-    private function fromData(array $fieldsData, string $Name): ProcessInterface
-    {
-        $rawPayload = $fieldsData;
-        $FieldCreator = new FieldFactory();
-        $FieldRegistrator = new RegisterFields();
-
-        return new Process($Name, $rawPayload, $FieldRegistrator, $FieldCreator);
+        //return $this->findById($process['process_id']);
     }
 
 }
